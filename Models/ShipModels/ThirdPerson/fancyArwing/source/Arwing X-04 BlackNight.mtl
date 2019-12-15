@@ -1,0 +1,40 @@
+# Wavefront .mtl file  -  created by SpaceDraw
+
+# File created: 18-11-23, 20:36
+
+newmtl Tex_0013_0_dds
+Ns 9.8
+d 1.0
+Tr 0.0
+illum 2
+Ka 0.5725 0.5725 0.5725 
+Kd 0.5725 0.5725 0.5725 
+Ks 0.0 0.0 0.0 
+Ke 0.0 0.0 0.0 
+map_Ka ../../Models/ShipModels/ThirdPerson/fancyArwing/source/Tex_0013_0.png
+map_Kd ../../Models/ShipModels/ThirdPerson/fancyArwing/source/Tex_0013_0.png
+
+newmtl Tex_0014_0_dds
+Ns 9.8
+d 1.0
+Tr 0.0
+illum 2
+Ka 0.5725 0.5725 0.5725 
+Kd 0.5725 0.5725 0.5725 
+Ks 0.0 0.0 0.0 
+Ke 0.0 0.0 0.0 
+map_Ka ../../Models/ShipModels/ThirdPerson/fancyArwing/source/Tex_0014_0.png
+map_Kd ../../Models/ShipModels/ThirdPerson/fancyArwing/source/Tex_0014_0.png
+
+newmtl Tex_0015_0_dds
+Ns 9.8
+d 1.0
+Tr 0.0
+illum 2
+Ka 0.5725 0.5725 0.5725 
+Kd 0.5725 0.5725 0.5725 
+Ks 0.0 0.0 0.0 
+Ke 0.0 0.0 0.0 
+map_Ka ../../Models/ShipModels/ThirdPerson/fancyArwing/source/Tex_0015_0.png
+map_Kd ../../Models/ShipModels/ThirdPerson/fancyArwing/source/Tex_0015_0.png
+
