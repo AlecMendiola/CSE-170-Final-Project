@@ -6,7 +6,7 @@
 int main ( int argc, char** argv )
 {
 	MyViewer* v = new MyViewer ( -1, -1, 1920, 1080, "Space Ace" );
-	v->cmd ( WsViewer::VCmdAxis );
+	//v->cmd ( WsViewer::VCmdAxis );
 
 	v->view_all ();
 	v->show ();
