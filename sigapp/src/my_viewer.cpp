@@ -8,6 +8,7 @@
 #include <sig/gs_camera.h>
 #include <math.h>
 #include <string>
+#include <random>
 
 
 float posBoundaryX = 100.0f;
@@ -18,7 +19,12 @@ float negBoundaryX = -100.0f;
 float negBoundaryY = -100.0f;
 float negBoundaryZ = -100.0f;
 
+float randVarianceX = 15.0f;
+float randVarianceY = 5.0f;
+
 bool firstPlay = true;
+
+
 
 
 MyViewer::MyViewer ( int x, int y, int w, int h, const char* l ) : WsViewer(x,y,w,h,l)
@@ -27,10 +33,6 @@ MyViewer::MyViewer ( int x, int y, int w, int h, const char* l ) : WsViewer(x,y,
 	_animating=false;
 	build_ui ();
 	createTitle();
-	build_scene ();
-	addShip();
-	addSun();
-	addWalls();
 	createSkybox();
 
 
@@ -56,56 +58,27 @@ void MyViewer::add_model ( SnShape* s, GsVec p )
 void MyViewer::createTitle()
 {
 
-	SnModel* floor = new SnModel;
-	GsModel& model = *floor->model();
+	SnModel* titleModel = new SnModel;
 
-	floor->model()->V.size(4);
-	floor->model()->F.size(2);
-	floor->model()->N.size(4);
+	titleModel->model()->init();
+	titleModel->model()->load("../../Models/SkyboxTextures/titleRotBig.obj");
 
-	floor->model()->V[0].set(posBoundaryX, -1, posBoundaryZ);
-	floor->model()->V[1].set(negBoundaryX, -1, posBoundaryZ);
-	floor->model()->V[2].set(negBoundaryX, -1, negBoundaryZ);
-	floor->model()->V[3].set(posBoundaryX, -1, negBoundaryZ);
+	GsVec frontAxis = GsVec(0, 1.5f, 1);
 
-
-	floor->model()->F[0].set(0, 1, 3);
-	floor->model()->F[1].set(2, 3, 1);
+	titleModel->model()->rotate(GsQuat(frontAxis, float(GS_2PI / 2)));
+	titleModel->model()->translate(GsVec(0, 0, posBoundaryZ * 3.0f));
+	//titleModel->model()->invert_faces();
 
 
-	GsVec frontAxis = GsVec(0, 1, 1);
+	rootg()->add(titleModel);
 
-	floor->model()->rotate(GsQuat(frontAxis, float(GS_2PI / 2)));
-	floor->model()->translate(GsVec(0, 0, posBoundaryZ * 2 +1));
-	floor->model()->invert_faces();
-
-	rootg()->add(floor);
-
-	GsModel::Group& textureGroup = *floor->model()->G.push();
-	textureGroup.fi = 0;
-	textureGroup.fn = model.F.size();
-	textureGroup.dmap = new GsModel::Texture;
-	textureGroup.dmap->fname.set("../../Models/SkyboxTextures/StarscapeTitle.png");
-
-	model.M.push().init();
-
-	
-	model.T.push(GsPnt2(posBoundaryX, posBoundaryZ));
-	model.T.push(GsPnt2(negBoundaryX, negBoundaryZ));
-	model.T.push(GsPnt2(negBoundaryX, posBoundaryZ));
-	model.T.push(GsPnt2(posBoundaryX, negBoundaryZ));
-
-	model.set_mode(GsModel::Smooth, GsModel::PerGroupMtl);
-	model.textured = true;
-
-	
 
 }
 
 void MyViewer::fixedCam()
 {
 	//GsCamera* camera = new GsCamera;
-	camera().eye.set(GsVec(0.0f, 5.0f, -20.0f));
+	camera().eye.set(GsVec(0.0f, 4.5f, -27.5f));
 	render();
 	ws_check();
 
@@ -325,18 +298,31 @@ void MyViewer::setWallR(SnModel* floor, GsModel& model)
 	floor->model()->F.size(2);
 	floor->model()->N.size(4);
 
-	floor->model()->V[0].set(posBoundaryX, -1, posBoundaryZ);
+	/*floor->model()->V[0].set(posBoundaryX, -1, posBoundaryZ);
 	floor->model()->V[1].set(negBoundaryX, -1, posBoundaryZ);
 	floor->model()->V[2].set(negBoundaryX, -1, negBoundaryZ);
-	floor->model()->V[3].set(posBoundaryX, -1, negBoundaryZ);
+	floor->model()->V[3].set(posBoundaryX, -1, negBoundaryZ);*/
 
-	floor->model()->F[0].set(0, 1, 3);
-	floor->model()->F[1].set(2, 3, 1);
+	/*floor->model()->V[0].set(1, 0, posBoundaryZ);
+	floor->model()->V[1].set(1, 0, 0);
+	floor->model()->V[2].set(1, posBoundaryY, posBoundaryZ);
+	floor->model()->V[3].set(1, posBoundaryY, 0);*/
+
+
+	floor->model()->V[0].set(1, negBoundaryY, posBoundaryZ);
+	floor->model()->V[1].set(1, negBoundaryY, negBoundaryZ);
+	floor->model()->V[2].set(1, posBoundaryY, posBoundaryZ);
+	floor->model()->V[3].set(1, posBoundaryY, negBoundaryZ);
+
+
+
+	floor->model()->F[0].set(3, 1, 0); 
+	floor->model()->F[1].set(0, 2, 3); //correct
 
 	GsVec frontAxis = GsVec(1, 1, 0);
 
-	floor->model()->rotate(GsQuat(frontAxis, float(GS_2PI / 2)));
-	floor->model()->translate(GsVec(posBoundaryX, 0, posBoundaryZ));
+	//floor->model()->rotate(GsQuat(frontAxis, float(GS_2PI / 2)));
+	floor->model()->translate(GsVec(posBoundaryX - 1, 0, posBoundaryZ));
 
 
 	rootg()->add(floor);
@@ -366,19 +352,33 @@ void MyViewer::setWallL(SnModel* floor, GsModel& model)
 	floor->model()->F.size(2);
 	floor->model()->N.size(4);
 
-	floor->model()->V[0].set(posBoundaryX, -1, posBoundaryZ);
+	/*floor->model()->V[0].set(posBoundaryX, -1, posBoundaryZ);
 	floor->model()->V[1].set(negBoundaryX, -1, posBoundaryZ);
 	floor->model()->V[2].set(negBoundaryX, -1, negBoundaryZ);
-	floor->model()->V[3].set(posBoundaryX, -1, negBoundaryZ);
+	floor->model()->V[3].set(posBoundaryX, -1, negBoundaryZ);*/
 
-	floor->model()->F[0].set(0, 1, 3);
-	floor->model()->F[1].set(2, 3, 1);
+	/*floor->model()->V[0].set(1, 0, posBoundaryZ);
+	floor->model()->V[1].set(1, 0, 0);
+	floor->model()->V[2].set(1, posBoundaryY, posBoundaryZ);
+	floor->model()->V[3].set(1, posBoundaryY, 0);*/
 
-	GsVec frontAxis = GsVec(-1, -1, 0);
 
-	floor->model()->rotate(GsQuat(frontAxis, float(GS_2PI / 2)));
-	floor->model()->translate(GsVec(negBoundaryX+1, 0, posBoundaryZ));
+	floor->model()->V[0].set(1, negBoundaryY, posBoundaryZ);
+	floor->model()->V[1].set(1, negBoundaryY, negBoundaryZ);
+	floor->model()->V[2].set(1, posBoundaryY, posBoundaryZ);
+	floor->model()->V[3].set(1, posBoundaryY, negBoundaryZ);
+
+
+
+	floor->model()->F[0].set(3, 1, 0);
+	floor->model()->F[1].set(0, 2, 3); //correct
+
+	GsVec frontAxis = GsVec(1, 1, 0);
+
+	//floor->model()->rotate(GsQuat(frontAxis, float(GS_2PI / 2)));
 	floor->model()->invert_faces();
+
+	floor->model()->translate(GsVec(negBoundaryX - 1, 0, posBoundaryZ));
 
 
 	rootg()->add(floor);
@@ -403,18 +403,10 @@ void MyViewer::setWallL(SnModel* floor, GsModel& model)
 
 void MyViewer::addShip()
 {
-	SnGroup* shipGroup = new SnGroup;
-	SnTransform* shipTransform = new SnTransform;
 	SnModel* shipModel = new SnModel;
-	shipGroup->add(shipModel);
-	shipGroup->add(shipTransform);
 	GsBox* shipBox = new GsBox;
 
-	GsLight* lightTest = new GsLight;
 
-	/*lightTest->init();
-	lightTest->diffuse = GsColor::black;
-	WsViewer::set_light->*/
 
 
 	shipModel->model()->init();
@@ -425,51 +417,135 @@ void MyViewer::addShip()
 	shipModel->model()->get_bounding_box(*shipBox);
 
 	/*gsout << shipBox->maxsize() << gsnl;
-	gsout << shipBox->size() << gsnl;
-	gsout << shipBox->center() << gsnl;*/
+	gsout << shipBox->size() << gsnl;*/
+	//gsout << shipBox->center() << gsnl;
 
+	rootg()->add(shipModel);
+	//gsout << rootg()->size() << gsnl;
 
-
-	rootg()->add(shipGroup);
-
-
-
-
+	for (int c = 0; c < 1000; c++) {
+		ws_check();
+		addAsteroid();
+	}
 
 
 }
 
-void MyViewer::addSun()
+
+void MyViewer::moveShip(char input)
 {
+	SnModel* ship = (SnModel*)rootg()->get(6);
 
-	SnGroup* sunGroup = new SnGroup;
-	SnTransform* sunTransform = new SnTransform;
-	SnModel* sunModel = new SnModel;
-	sunGroup->add(sunModel);
-	sunGroup->add(sunTransform);
+	float increment = 1.0f;
 
-	//sunModel->model()->load("../../Models/MiscModels/sun/sun.obj");
+	if (input == 'w') {
+		ship->model()->translate(GsVec(0, increment, 0));
+		render();
+		ws_check();
+	}
 
+	if (input == 's') {
+		ship->model()->translate(GsVec(0, -increment, 0));
+		render();
+		ws_check();
+	}
 
-	rootg()->add(sunModel);
+	if (input == 'a') {
+		ship->model()->translate(GsVec(increment, 0, 0));
+		render();
+		ws_check();
+	}
+
+	if (input == 'd') {
+		ship->model()->translate(GsVec(-increment, 0, 0));
+		render();
+		ws_check();
+	}
+	
+
 
 
 }
 
-void MyViewer::addWalls()
+
+
+void MyViewer::addAsteroid() {
+
+
+	//int easterEgg = gs_random(0, 300);
+
+
+	SnModel* asteroidModel = new SnModel;
+
+	SnModel* ship = new SnModel;
+
+	GsBox* b = new GsBox;
+
+	GsBox* asteroidBox = new GsBox;
+
+	ship = (SnModel*)rootg()->get(6);
+
+	ship->model()->get_bounding_box(*b);
+
+	asteroidModel->model()->init();
+
+	/*if (easterEgg == 28) {
+		gsout << "EASTER EGG!" << gsnl;
+		asteroidModel->model()->load("../../Models/MiscModels/bb-Yoda-Obj/bbY.obj");
+	}*/
+
+	//else{
+		asteroidModel->model()->load("../../Models/AsteroidModels/asteroidLowPoly/asteroidSmall.obj");
+	//}
+
+
+	/*
+	ship box
+	13.2806
+	10.4039 3.50116 13.2806
+	-1.19209e-06 0.589332 0.4039
+	*/
+
+	asteroidModel->model()->translate(GsVec(gs_random(b->center().x - randVarianceX, b->center().x + randVarianceX), gs_random(b->center().y - randVarianceY, b->center().y + randVarianceY), posBoundaryZ * 2 + 1));
+
+	asteroidModel->model()->get_bounding_box(*asteroidBox);
+
+	//gsout << asteroidBox->center() << gsnl;
+
+	rootg()->add(asteroidModel);
+
+	moveAsteroid(asteroidModel, asteroidBox);
+	
+
+}
+
+
+void MyViewer::moveAsteroid(SnModel* asteroid, GsBox* asteroidBox)
 {
+	float increment = -10.0f;
+	do {
+		asteroid->model()->translate(GsVec(0.0f, 0.0f, increment));
+		asteroid->model()->get_bounding_box(*asteroidBox);
+		render();
+		ws_check();
+		gs_sleep(50);
 
+	} while (asteroidBox->center().z > -30);
+
+	//delete asteroid;
+	//asteroid = NULL;
 
 
 }
+
+
+
+
+
 
 void MyViewer::build_scene ()
 {
 
-	SnModel* cube = new SnModel;
-	cube->model()->make_box( GsBox( GsPnt(-5,-5,-5),GsPnt(5,5,5) ) );
-
-	//rootg()->add(cube);
 	
 
 }
@@ -491,6 +567,7 @@ int MyViewer::handle_keyboard ( const GsEvent &e )
 
 		if (firstPlay == true) {
 			fixedCam();
+			addShip();
 			return 1;
 		}
 		else {
@@ -499,6 +576,22 @@ int MyViewer::handle_keyboard ( const GsEvent &e )
 		return 1;
 	}
 
+	case 119: {
+		moveShip('w');
+		return 1;
+	}
+	case 115: {
+		moveShip('s');
+		return 1;
+	}
+	case 97: {
+		moveShip('a');
+		return 1;
+	}
+	case 100: {
+		moveShip('d');
+		return 1;
+	}
 
 
 		default: gsout<<"Key pressed: "<<e.key<<gsnl;

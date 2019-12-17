@@ -30,6 +30,9 @@ class MyViewer : public WsViewer
 	void createTitle();
 	void fixedCam();
 	void setCeiling(SnModel* floor, GsModel& model);
+	void addAsteroid();
+	void moveAsteroid(SnModel* asteroid, GsBox* asteroidBox);
+	void moveShip(char input);
 
 
 	void build_scene ();
