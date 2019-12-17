@@ -19,7 +19,7 @@ float negBoundaryX = -100.0f;
 float negBoundaryY = -100.0f;
 float negBoundaryZ = -100.0f;
 
-float randVarianceX = 15.0f;
+float randVarianceX = 10.0f;
 float randVarianceY = 5.0f;
 
 bool firstPlay = true;
@@ -532,6 +532,7 @@ void MyViewer::moveAsteroid(SnModel* asteroid, GsBox* asteroidBox)
 
 	} while (asteroidBox->center().z > -30);
 
+	rootg()->remove(asteroid);
 	//delete asteroid;
 	//asteroid = NULL;
 
