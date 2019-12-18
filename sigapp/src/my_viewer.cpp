@@ -28,7 +28,8 @@ bool pause = false;
 
 //fps counter vars
 bool fps_counter_enable = false;
-bool ship_coords_enable = true;
+bool ship_coords_enable = false;
+bool mvmt_enable = true;
 double fpssum = 0.0;
 int count = 0;
 
@@ -37,6 +38,8 @@ bool up = false;
 bool down = false;
 bool left = false;
 bool right = false;
+bool qkey = false;
+bool ekey = false;
 
 //ship (x, y, z) location
 float xloc = 0.0f;
@@ -45,12 +48,14 @@ float zloc = 0.0f; //not currently used
 //ship velocity for kinematics
 float xvel = 0.0f;
 float yvel = 0.0f;
-//ship rotation state, currently discrete
-int yrot = 0;
-int xrot = 0;
-//for future angular acceleration
+//ship rotation state
+float yrot = 0.0f;
+float xrot = 0.0f;
+float zrot = 0.0f;
+//for angular acceleration
 float yangvel = 0.0f;
 float xangvel = 0.0f;
+float zangvel = 0.0f;
 
 
 
@@ -468,80 +473,120 @@ void MyViewer::moveShip() //removed args
 	float inc = 0.03f;
 	if (up) {
 		yvel += inc;
-		if (yrot == 0) {
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), -float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-			yrot = 1;
+
+		if (yrot > -float(GS_PI) / 4.0f) {
+			yangvel -= 0.01f;
 		}
+		else if (yrot <= float(GS_PI) / 4.0f) {
+			yangvel = 0.005f;
+		}
+
 	} else if (down) {
 		yvel -= inc;
-		if (yrot == 0) {
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-			yrot = -1;
+
+		if (yrot < float(GS_PI) / 4.0f) {
+			yangvel += 0.01f;
 		}
+		else if (yrot >= float(GS_PI) / 4.0f) {
+			yangvel = -0.005f;
+		}
+
 	} else if (!up && !down) {
 		//decelerate
 		yvel *= 0.95f;
-		if (yrot == 1) {
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-		}
-		else if (yrot ==  -1) {
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), -float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-		}
-		yrot = 0;
 
+		if (yrot >= -0.05f && yrot <= 0.05f) {
+			yangvel = 0.0f;
+		} else if (yrot > 0.05f) { //if it is pointing up
+			if (yangvel >= -0.1f) { //and it is rotating upwards
+				yangvel = -0.1f; //start it downwards
+			}
+			else { //if it is already rotating downwards and still pointing up
+				yangvel *= 0.99f; //decelerate the downward rotation
+			}
+		}
+		else if (yrot < -0.05f) { //if it is pointing down
+			if (yangvel <= 0.1f) { //and is rotating downward
+				yangvel = 0.1f; //start it rotating upwards
+			}
+			else { //if it is pointing downwards and already rotating upwards
+				yangvel *= 0.99f; //decelerate the upward rotation
+			}
+		}
 	}
 
 	if (left) {
 		xvel += inc;
-		if (xrot == 0) {
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-			xrot = 1;
+
+		if (xrot > -float(GS_PI) / 4.0f) {
+			xangvel -= 0.01f;
 		}
+		else if (xrot <= float(GS_PI) / 4.0f) {
+			xangvel = 0.005f;
+		}
+
 	} else if (right) {
 		xvel -= inc;
-		if (xrot == 0) {
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), -float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-			xrot = -1;
+
+		if (xrot < float(GS_PI) / 4.0f) {
+			xangvel += 0.01f;
 		}
+		else if (xrot >= float(GS_PI) / 4.0f) {
+			xangvel = -0.005f;
+		}
+
 	} else if (!left && !right) {
 		//decelerate
 		xvel *= 0.95f;
-		if (xrot == 1) {
 
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), -float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-
+		if (xrot >= -0.05f && xrot <= 0.05f) {
+			xangvel = 0.0f;
 		}
-		else if (xrot == -1) {
-
-			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
-			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), float(GS_PI) / 10.0f));
-			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
-
+		else if (xrot > 0.05f) { //if it is pointing up
+			if (xangvel >= -0.1f) { //and it is rotating upwards
+				xangvel = -0.1f; //start it downwards
+			}
+			else { //if it is already rotating downwards and still pointing up
+				xangvel *= 0.99f; //decelerate the downward rotation
+			}
 		}
-		xrot = 0;
+		else if (xrot < -0.05f) { //if it is pointing down
+			if (xangvel <= 0.1f) { //and is rotating downward
+				xangvel = 0.1f; //start it rotating upwards
+			}
+			else { //if it is pointing downwards and already rotating upwards
+				xangvel *= 0.99f; //decelerate the upward rotation
+			}
+		}
 
+	}
+
+	if (qkey) {
+		zangvel -= 0.01f;
+	}
+	else if (ekey) {
+		zangvel += 0.01f;
+	}
+	else {
+		zangvel *= 0.95f;
 	}
 
 	//rotation portion
 	//movement portion
-	ship->model()->translate(GsVec(0, yvel, 0));
-	ship->model()->translate(GsVec(xvel, 0, 0));
-	yloc += yvel;
-	xloc += xvel;
+	ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+	ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), yangvel));
+	ship->model()->rotate(GsQuat(GsVec(0.0f, 1.0f, 0.0f), -xangvel));
+	ship->model()->rotate(GsQuat(GsVec(0.0f, 0.0f, 1.0f), zangvel));
+	ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+	yrot += yangvel;
+	xrot += xangvel;
+
+	if (mvmt_enable) {
+		ship->model()->translate(GsVec(0, yvel, 0));
+		ship->model()->translate(GsVec(xvel, 0, 0));
+		yloc += yvel;
+		xloc += xvel;
+	}
 
 	
 	//ship->model()->rotate(GsQuat(GsVec(1.0, 0.0, 0.0), float(GS_PI)/10.0f));
@@ -658,6 +703,40 @@ int MyViewer::handle_key_release(const GsEvent& e) {
 			//gsout << "Right released \n";
 			return 1;
 		}
+
+		case 'w': {
+			up = false;
+			//gsout << "Up released \n";
+			return 1;
+		}
+
+		case 's': {
+			down = false;
+			//gsout << "Down released \n";
+			return 1;
+		}
+
+		case 'a': {
+			left = false;
+			//gsout << "Left released \n";
+			return 1;
+		}
+
+		case 'd': {
+			right = false;
+			//gsout << "Right released \n";
+			return 1;
+		}
+
+		case 'q': {
+			qkey = false;
+			return 1;
+		}
+
+		case 'e': {
+			ekey = false;
+			return 1;
+		}
 	}
 	return 0;
 
@@ -693,6 +772,41 @@ int MyViewer::handle_keyboard ( const GsEvent &e )
 			//gsout << "Right pressed \n";
 			return 1;
 		}
+
+		case 'w': {
+			up = true;
+			//gsout << "Up pressed \n";
+			return 1;
+		}
+
+		case 's': {
+			down = true;
+			//gsout << "Down pressed \n";
+			return 1;
+		}
+
+		case 'a': {
+			left = true;
+			//gsout << "Left pressed \n";
+			return 1;
+		}
+
+		case 'd': {
+			right = true;
+			//gsout << "Right pressed \n";
+			return 1;
+		}
+		
+		case 'q': {
+			qkey = true;
+			return 1;
+		}
+
+		case 'e': {
+			ekey = true;
+			return 1;
+		}
+
 		case 32: {
 
 			if (firstPlay == true) {
