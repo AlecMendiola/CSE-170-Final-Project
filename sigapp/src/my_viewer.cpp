@@ -38,13 +38,19 @@ bool down = false;
 bool left = false;
 bool right = false;
 
-//ship velocity for kinematics
+//ship (x, y, z) location
 float xloc = 0.0f;
 float yloc = 0.0f;
+float zloc = 0.0f; //not currently used
+//ship velocity for kinematics
 float xvel = 0.0f;
 float yvel = 0.0f;
+//ship rotation state, currently discrete
 int yrot = 0;
 int xrot = 0;
+//for future angular acceleration
+float yangvel = 0.0f;
+float xangvel = 0.0f;
 
 
 
@@ -459,8 +465,6 @@ void MyViewer::addShip()
 void MyViewer::moveShip() //removed args
 {
 	SnModel* ship = (SnModel*)rootg()->get(6);
-
-	//float increment = 1.0f;
 	float inc = 0.03f;
 	if (up) {
 		yvel += inc;
@@ -492,6 +496,7 @@ void MyViewer::moveShip() //removed args
 			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
 		}
 		yrot = 0;
+
 	}
 
 	if (left) {
@@ -514,16 +519,21 @@ void MyViewer::moveShip() //removed args
 		//decelerate
 		xvel *= 0.95f;
 		if (xrot == 1) {
+
 			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
 			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), -float(GS_PI) / 10.0f));
 			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+
 		}
 		else if (xrot == -1) {
+
 			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
 			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), float(GS_PI) / 10.0f));
 			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+
 		}
 		xrot = 0;
+
 	}
 
 	//rotation portion
@@ -793,7 +803,7 @@ void MyViewer::game_loop() {
 
 		//SHIP COORDS, USE GLOBAL FLAG TO DISABLE
 		if (ship_coords_enable) {
-			if (count == 10) {
+			if (count == 18) {
 				gsout << "Ship is at x = " << xloc << " and y = " << yloc << gsnl;
 				count = 1;
 			}
