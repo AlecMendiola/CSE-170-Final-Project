@@ -26,6 +26,12 @@ bool firstPlay = true;
 bool game_running = false;
 bool pause = false;
 
+//fps counter vars
+bool fps_counter_enable = false;
+bool ship_coords_enable = true;
+double fpssum = 0.0;
+int count = 0;
+
 //keystates for ship movement
 bool up = false;
 bool down = false;
@@ -33,8 +39,14 @@ bool left = false;
 bool right = false;
 
 //ship velocity for kinematics
+float xloc = 0.0f;
+float yloc = 0.0f;
 float xvel = 0.0f;
 float yvel = 0.0f;
+int yrot = 0;
+int xrot = 0;
+
+
 
 
 
@@ -448,55 +460,83 @@ void MyViewer::moveShip() //removed args
 {
 	SnModel* ship = (SnModel*)rootg()->get(6);
 
-	float increment = 1.0f;
+	//float increment = 1.0f;
 	float inc = 0.03f;
 	if (up) {
 		yvel += inc;
-	}
-
-	if (down) {
+		if (yrot == 0) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), -float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+			yrot = 1;
+		}
+	} else if (down) {
 		yvel -= inc;
+		if (yrot == 0) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+			yrot = -1;
+		}
+	} else if (!up && !down) {
+		//decelerate
+		yvel *= 0.95f;
+		if (yrot == 1) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+		}
+		else if (yrot ==  -1) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(1.0f, 0.0f, 0.0f), -float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+		}
+		yrot = 0;
 	}
 
 	if (left) {
 		xvel += inc;
-	}
-
-	if (right) {
+		if (xrot == 0) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+			xrot = 1;
+		}
+	} else if (right) {
 		xvel -= inc;
-	}
-
-	if (!up && !down) {
-		//decelerate
-		yvel *= 0.95f;
-	}
-
-	if (!left && !right) {
+		if (xrot == 0) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), -float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+			xrot = -1;
+		}
+	} else if (!left && !right) {
 		//decelerate
 		xvel *= 0.95f;
+		if (xrot == 1) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), -float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+		}
+		else if (xrot == -1) {
+			ship->model()->translate(GsVec(-xloc, -yloc, 0.0f));
+			ship->model()->rotate(GsQuat(GsVec(0.0, 1.0, 0.0), float(GS_PI) / 10.0f));
+			ship->model()->translate(GsVec(xloc, yloc, 0.0f));
+		}
+		xrot = 0;
 	}
 
+	//rotation portion
+	//movement portion
 	ship->model()->translate(GsVec(0, yvel, 0));
 	ship->model()->translate(GsVec(xvel, 0, 0));
-	/*
-	if (up) {
-		ship->model()->translate(GsVec(0, increment, 0));
-	}
+	yloc += yvel;
+	xloc += xvel;
 
-	if (down) {
-		ship->model()->translate(GsVec(0, -increment, 0));
-	}
-
-	if (left) {
-		ship->model()->translate(GsVec(increment, 0, 0));
-	}
-
-	if (right) {
-		ship->model()->translate(GsVec(-increment, 0, 0));
-	}*/
-
-	render();
-	ws_check();
+	
+	//ship->model()->rotate(GsQuat(GsVec(1.0, 0.0, 0.0), float(GS_PI)/10.0f));
+	//render();
+	//ws_check();
 }
 
 void MyViewer::addAsteroid() {
@@ -723,28 +763,50 @@ void MyViewer::game_loop() {
 	addShip(); //call alec's ship spawning method
 
 	pause = false;
-	double frdt = 1.0 / 60.0;
-	double t = 0, lt = 0, t0 = gs_time();
+	double t = 0;
+	double lt = 0;
+	double t0 = gs_time();
+
+	//MAIN GAME LOGIC LOOP
 	do {
+		/* ========== sig has vsync so no need for artifical delay ===========
 		while (t - lt < frdt) {
 			ws_check();
-			t = gs_time() - t0;
+			
+		}*/
+
+		t = gs_time() - t0;
+
+		//FPS COUNTER, USE GLOBAL FLAG TO DISABLE
+		if (fps_counter_enable) {
+			if (count == 10) {
+				fpssum += 1 / (t - lt);
+				gsout << fpssum / 10.0 << gsnl;
+				count = 1;
+				fpssum = 0.0;
+			}
+			else {
+				count++;
+				fpssum += 1 / (t - lt);
+			}
 		}
-		//input debug
-		//gsout << up << ", " << down << ", " << left << ", " << right << "\n";
 
+		//SHIP COORDS, USE GLOBAL FLAG TO DISABLE
+		if (ship_coords_enable) {
+			if (count == 10) {
+				gsout << "Ship is at x = " << xloc << " and y = " << yloc << gsnl;
+				count = 1;
+			}
+			else {
+				count++;
+			}
+		}
 
-		//UpdateMusicStream(music);
+		lt = t; //reset time for next frame
 
-
-
-		lt = t;
-
-
-		// handle any drawing updates here
 		moveShip(); //call alec's ship movement method
 
-
+		//DO NOT INCLUDE RENDER AND WS_CHECK IN ANY METHODS CALLED HERE
 		render();
 		ws_check();
 	} while (game_running);
