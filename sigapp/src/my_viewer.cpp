@@ -26,10 +26,15 @@ bool firstPlay = true;
 bool game_running = false;
 bool pause = false;
 
+//keystates for ship movement
 bool up = false;
 bool down = false;
 bool left = false;
 bool right = false;
+
+//ship velocity for kinematics
+float xvel = 0.0f;
+float yvel = 0.0f;
 
 
 
@@ -444,7 +449,36 @@ void MyViewer::moveShip() //removed args
 	SnModel* ship = (SnModel*)rootg()->get(6);
 
 	float increment = 1.0f;
+	float inc = 0.03f;
+	if (up) {
+		yvel += inc;
+	}
 
+	if (down) {
+		yvel -= inc;
+	}
+
+	if (left) {
+		xvel += inc;
+	}
+
+	if (right) {
+		xvel -= inc;
+	}
+
+	if (!up && !down) {
+		//decelerate
+		yvel *= 0.95f;
+	}
+
+	if (!left && !right) {
+		//decelerate
+		xvel *= 0.95f;
+	}
+
+	ship->model()->translate(GsVec(0, yvel, 0));
+	ship->model()->translate(GsVec(xvel, 0, 0));
+	/*
 	if (up) {
 		ship->model()->translate(GsVec(0, increment, 0));
 	}
@@ -459,43 +493,10 @@ void MyViewer::moveShip() //removed args
 
 	if (right) {
 		ship->model()->translate(GsVec(-increment, 0, 0));
-	}
+	}*/
 
 	render();
 	ws_check();
-
-	/*
-	if (input == 'w') {
-		ship->model()->translate(GsVec(0, increment, 0));
-		render();
-		ws_check();
-	}
-
-	if (input == 's') {
-		ship->model()->translate(GsVec(0, -increment, 0));
-		render();
-		ws_check();
-	}
-
-	if (input == 'a') {
-		ship->model()->translate(GsVec(increment, 0, 0));
-		render();
-		ws_check();
-	}
-
-	if (input == 'd') {
-		ship->model()->translate(GsVec(-increment, 0, 0));
-		render();
-		ws_check();
-	}
-	*/
-
-
-
-}
-
-void MyViewer::moveShipKinetic() {
-
 }
 
 void MyViewer::addAsteroid() {
@@ -719,29 +720,31 @@ void MyViewer::game_loop() {
 	gsout << "Starting game loop... \n";
 	game_running = true;
 
-	addShip();//call alec's ship spawning method
+	addShip(); //call alec's ship spawning method
 
 	pause = false;
-	double frdt = 1.0 / 30.0;
+	double frdt = 1.0 / 60.0;
 	double t = 0, lt = 0, t0 = gs_time();
 	do {
 		while (t - lt < frdt) {
 			ws_check();
 			t = gs_time() - t0;
 		}
-		gsout << up << ", " << down << ", " << left << ", " << right << "\n";
+		//input debug
+		//gsout << up << ", " << down << ", " << left << ", " << right << "\n";
+
+
 		//UpdateMusicStream(music);
+
+
+
 		lt = t;
+
+
 		// handle any drawing updates here
+		moveShip(); //call alec's ship movement method
 
-		moveShip();
 
-
-		/*
-		if (t0 - int(t0) < 0.01) {
-			addAsteroid();
-		}
-		*/
 		render();
 		ws_check();
 	} while (game_running);

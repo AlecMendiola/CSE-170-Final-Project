@@ -36,13 +36,10 @@ class MyViewer : public WsViewer
 
 
 	void build_scene ();
-	void show_normals ( bool view );
-	void run_animation ();
 	virtual int handle_keyboard ( const GsEvent &e ) override;
 	virtual int handle_key_release(const GsEvent& e) override;
 	virtual int uievent ( int e ) override;
 
 	void game_loop();
-	void moveShipKinetic();
 };
 
