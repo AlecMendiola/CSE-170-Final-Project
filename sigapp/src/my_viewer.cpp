@@ -23,6 +23,13 @@ float randVarianceX = 10.0f;
 float randVarianceY = 5.0f;
 
 bool firstPlay = true;
+bool game_running = false;
+bool pause = false;
+
+bool up = false;
+bool down = false;
+bool left = false;
+bool right = false;
 
 
 
@@ -34,7 +41,6 @@ MyViewer::MyViewer ( int x, int y, int w, int h, const char* l ) : WsViewer(x,y,
 	build_ui ();
 	createTitle();
 	createSkybox();
-
 
 }
 
@@ -423,21 +429,42 @@ void MyViewer::addShip()
 	rootg()->add(shipModel);
 	//gsout << rootg()->size() << gsnl;
 
+	/*
 	for (int c = 0; c < 1000; c++) {
 		ws_check();
 		addAsteroid();
 	}
-
+	*/
 
 }
 
 
-void MyViewer::moveShip(char input)
+void MyViewer::moveShip() //removed args
 {
 	SnModel* ship = (SnModel*)rootg()->get(6);
 
 	float increment = 1.0f;
 
+	if (up) {
+		ship->model()->translate(GsVec(0, increment, 0));
+	}
+
+	if (down) {
+		ship->model()->translate(GsVec(0, -increment, 0));
+	}
+
+	if (left) {
+		ship->model()->translate(GsVec(increment, 0, 0));
+	}
+
+	if (right) {
+		ship->model()->translate(GsVec(-increment, 0, 0));
+	}
+
+	render();
+	ws_check();
+
+	/*
 	if (input == 'w') {
 		ship->model()->translate(GsVec(0, increment, 0));
 		render();
@@ -461,13 +488,15 @@ void MyViewer::moveShip(char input)
 		render();
 		ws_check();
 	}
-	
+	*/
 
 
 
 }
 
+void MyViewer::moveShipKinetic() {
 
+}
 
 void MyViewer::addAsteroid() {
 
@@ -546,13 +575,42 @@ void MyViewer::moveAsteroid(SnModel* asteroid, GsBox* asteroidBox)
 
 void MyViewer::build_scene ()
 {
-
 	
 
 }
 
 
+int MyViewer::handle_key_release(const GsEvent& e) {
+	int ret = WsViewer::handle_key_release(e); // 1st let system check events
+	if (ret) return ret;
+	switch (e.key) {
+		case GsEvent::KeyUp: {
+			up = false;
+			//gsout << "Up released \n";
+			return 1;
+		}
 
+		case GsEvent::KeyDown: {
+			down = false;
+			//gsout << "Down released \n";
+			return 1;
+		}
+
+		case GsEvent::KeyLeft: {
+			left = false;
+			//gsout << "Left released \n";
+			return 1;
+		}
+
+		case GsEvent::KeyRight: {
+			right = false;
+			//gsout << "Right released \n";
+			return 1;
+		}
+	}
+	return 0;
+
+}
 
 int MyViewer::handle_keyboard ( const GsEvent &e )
 {
@@ -560,43 +618,83 @@ int MyViewer::handle_keyboard ( const GsEvent &e )
 	if ( ret ) return ret;
 
 	//SnModel torusEdit = (SnModel*)rootg()->get(0);
+	switch (e.key) {
+		case GsEvent::KeyUp: {
+			up = true;
+			//gsout << "Up pressed \n";
+			return 1;
+		}
 
+		case GsEvent::KeyDown: {
+			down = true;
+			//gsout << "Down pressed \n";
+			return 1;
+		}
+
+		case GsEvent::KeyLeft: {
+			left = true;
+			//gsout << "Left pressed \n";
+			return 1;
+		}
+
+		case GsEvent::KeyRight: {
+			right = true;
+			//gsout << "Right pressed \n";
+			return 1;
+		}
+		case 32: {
+
+			if (firstPlay == true) {
+				fixedCam();
+				//addShip();
+				game_loop();
+				return 1;
+			}
+			else {
+				return 1;
+			}
+			return 1;
+		}
+	}
+
+	/*
 	switch ( e.key )
-	{	case GsEvent::KeyEsc : gs_exit(); return 1;
+	{	case GsEvent::KeyEsc : gs_exit(); 
+		return 1;
+		case 32: {
 
-	case 32: {
-
-		if (firstPlay == true) {
-			fixedCam();
-			addShip();
+			if (firstPlay == true) {
+				fixedCam();
+				addShip();
+				return 1;
+			}
+			else {
+				return 1;
+			}
 			return 1;
 		}
-		else {
+
+		case 119: {
+			moveShip('w');
 			return 1;
 		}
-		return 1;
-	}
-
-	case 119: {
-		moveShip('w');
-		return 1;
-	}
-	case 115: {
-		moveShip('s');
-		return 1;
-	}
-	case 97: {
-		moveShip('a');
-		return 1;
-	}
-	case 100: {
-		moveShip('d');
-		return 1;
-	}
+		case 115: {
+			moveShip('s');
+			return 1;
+		}
+		case 97: {
+			moveShip('a');
+			return 1;
+		}
+		case 100: {
+			moveShip('d');
+			return 1;
+		}
 
 
-		default: gsout<<"Key pressed: "<<e.key<<gsnl;
-	}
+			default: gsout<<"Key pressed: "<<e.key<<gsnl;
+		}
+		*/
 
 	return 0;
 }
@@ -609,4 +707,43 @@ int MyViewer::uievent ( int e )
 		case EvExit: gs_exit();
 	}
 	return WsViewer::uievent(e);
+}
+
+
+void MyViewer::game_loop() {
+	if (game_running) {
+		gsout << "Game is already running! \n";
+		return;
+	}
+
+	gsout << "Starting game loop... \n";
+	game_running = true;
+
+	addShip();//call alec's ship spawning method
+
+	pause = false;
+	double frdt = 1.0 / 30.0;
+	double t = 0, lt = 0, t0 = gs_time();
+	do {
+		while (t - lt < frdt) {
+			ws_check();
+			t = gs_time() - t0;
+		}
+		gsout << up << ", " << down << ", " << left << ", " << right << "\n";
+		//UpdateMusicStream(music);
+		lt = t;
+		// handle any drawing updates here
+
+		moveShip();
+
+
+		/*
+		if (t0 - int(t0) < 0.01) {
+			addAsteroid();
+		}
+		*/
+		render();
+		ws_check();
+	} while (game_running);
+
 }
