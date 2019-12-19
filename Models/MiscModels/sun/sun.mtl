@@ -1,8 +1,0 @@
-# Exported from 3D Builder
-
-newmtl 1_0
-Kd 0.552941 0.482353 0.000000
-
-newmtl Mat_0
-Kd 1.000000 1.000000 1.000000
-map_Kd ../../Models/MiscModels/sun/suncyl1.jpg
